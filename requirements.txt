@@ -1,0 +1,12 @@
+fastapi==0.109.2
+pydantic~=2.5.3
+cryptography==42.0.1
+uvicorn==0.27.0
+sqlmodel==0.0.14
+SQLAlchemy==2.0.25
+asyncpg==0.29.0
+python-jose==3.3.0
+passlib==1.7.4
+bcrypt==4.0.1
+python-multipart==0.0.9
+aiohttp==3.9.3
