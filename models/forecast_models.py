@@ -9,7 +9,7 @@ class WindType(BaseModel):
 class PrecipitationType(BaseModel):
     type: str | None = Field(default=None)
     precip: float = Field(default=0.0)
-    probability: int = Field(default=0)
+    probability: float = Field(default=0.0)
 
 
 class SunType(BaseModel):

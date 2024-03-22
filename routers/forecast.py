@@ -1,6 +1,6 @@
 from typing import Annotated
 
-import aiohttp
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from models.database_models import User
@@ -20,11 +20,12 @@ async def get_forecast_data(*, lat: str, lon: str) -> Forecast | None:
     forecast: Forecast | None = buffer.get(lat, lon)
     if not forecast:
         url = BASE_URL + f"?lat={lat}&lon={lon}&units=metric&lang=de&appid={OPENWEATHERMAP_KEY}"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                data: dict = await resp.json()
-                forecast = Forecast(**data)
-                buffer.add(lat, lon, forecast)
+        async with httpx.AsyncClient() as client:
+            response: httpx.Response = await client.get(url)
+            print(response.json())
+            forecast = Forecast(**response.json())
+            buffer.add(lat, lon, forecast)
+
     return forecast
 
 

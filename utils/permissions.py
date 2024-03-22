@@ -11,6 +11,7 @@ class PermissionType(Enum):
     """
     Describes the type of Permission that should be requested in `get_user_with_permission`.
     """
+
     WRITE = 0
     READ = 1
 
