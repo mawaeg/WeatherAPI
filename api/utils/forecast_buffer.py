@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from models.forecast_models import Forecast
+from api.models.forecast_models import Forecast
 
 
 class ForecastBufferObject:

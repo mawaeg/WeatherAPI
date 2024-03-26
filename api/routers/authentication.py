@@ -3,9 +3,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from models.database_models import DBUser
-from models.response_models import Token
-from utils.security import authenticate_user, create_access_token
+from api.models.database_models import DBUser
+from api.models.response_models import Token
+from api.utils.security import authenticate_user, create_access_token
 
 auth_router = APIRouter(tags=["Authentication"])
 

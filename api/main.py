@@ -3,9 +3,9 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import dispose_database, get_session, initialize_database
-from routers import authentication, forecast, permissions, sensors, users
-from utils.security import get_current_user
+from api.routers import authentication, forecast, permissions, sensors, users
+from api.utils.database import dispose_database, get_session, initialize_database
+from api.utils.security import get_current_user
 
 app: FastAPI = FastAPI()
 

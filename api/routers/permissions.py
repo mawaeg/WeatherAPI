@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from database import get_session
-from models.database_models import SensorPermission, SensorPermissionCreate, User
-from models.response_models import NotFoundError
-from utils.security import get_current_superuser
+from api.models.database_models import SensorPermission, SensorPermissionCreate, User
+from api.models.response_models import NotFoundError
+from api.utils.database import get_session
+from api.utils.security import get_current_superuser
 
 permissions_router = APIRouter(tags=["Permissions"], prefix="/permissions")
 

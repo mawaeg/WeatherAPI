@@ -8,8 +8,8 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 
-from database import get_session
-from models.database_models import DBUser
+from api.models.database_models import DBUser
+from api.utils.database import get_session
 from SECRETS import SECRET_KEY
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

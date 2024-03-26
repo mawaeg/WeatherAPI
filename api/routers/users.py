@@ -5,10 +5,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from database import get_session
-from models.database_models import DBUser, User, UserCreate
-from models.response_models import BadRequest
-from utils.security import get_current_superuser, get_current_user, get_password_hash
+from api.models.database_models import DBUser, User, UserCreate
+from api.models.response_models import BadRequest
+from api.utils.database import get_session
+from api.utils.security import get_current_superuser, get_current_user, get_password_hash
 
 users_router = APIRouter(tags=["Users"], prefix="/users")
 

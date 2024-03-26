@@ -5,11 +5,11 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql import func
 from sqlmodel import NUMERIC, cast, select
 
-from database import get_session
-from models.database_models import DBUser, Sensor, SensorCreate, SensorData, SensorDataCreate, User
-from models.response_models import DailySensorData, NotFoundError
-from utils.permissions import get_user_read_permissions, get_user_write_permissions
-from utils.security import get_current_superuser, get_current_user
+from api.models.database_models import DBUser, Sensor, SensorCreate, SensorData, SensorDataCreate, User
+from api.models.response_models import DailySensorData, NotFoundError
+from api.utils.database import get_session
+from api.utils.permissions import get_user_read_permissions, get_user_write_permissions
+from api.utils.security import get_current_superuser, get_current_user
 
 sensors_router = APIRouter(tags=["Sensors"], prefix="/sensor")
 

@@ -3,12 +3,12 @@ from typing import Annotated
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from models.database_models import User
-from models.forecast_models import Forecast
-from models.response_models import BadGateway
+from api.models.database_models import User
+from api.models.forecast_models import Forecast
+from api.models.response_models import BadGateway
+from api.utils.forecast_buffer import ForecastBuffer
+from api.utils.security import get_current_user
 from SECRETS import OPENWEATHERMAP_KEY
-from utils.forecast_buffer import ForecastBuffer
-from utils.security import get_current_user
 
 forecast_router = APIRouter(tags=["Forecast"])
 buffer: ForecastBuffer = ForecastBuffer()

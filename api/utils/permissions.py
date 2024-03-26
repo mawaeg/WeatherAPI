@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from models.database_models import DBUser, SensorPermission
+from api.models.database_models import DBUser, SensorPermission
 
 
 class PermissionType(Enum):
