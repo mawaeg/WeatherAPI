@@ -34,6 +34,30 @@ async def create_sensor_and_extract_user(token: str) -> tuple[Sensor, DBUser]:
     return sensor, user
 
 
+async def create_user_write_permission(user_token: str) -> tuple[Sensor, DBUser, SensorPermission]:
+    """
+    Creates a new `SensorPermission` for a given user and a newly created sensor.
+    Args:
+        user_token (str): The token of the current user
+
+    Returns:
+        The `Sensor`, the `DBUser` and the `SensorPermission`
+    """
+    sensor, user = await create_sensor_and_extract_user(user_token)
+    async with async_fake_session_maker() as session:
+        await session.execute(delete(SensorPermission))
+        await session.commit()
+
+        sensor_permission: SensorPermission = SensorPermission(
+            user_id=user.id, sensor_id=sensor.id, read=True, write=False
+        )
+        session.add(sensor_permission)
+        await session.commit()
+        await session.refresh(sensor_permission)
+
+    return sensor, user, sensor_permission
+
+
 class TestPutSensorPermission(_TestPutAuthentication):
 
     @property
@@ -131,17 +155,7 @@ class TestGetSensorPermission(_TestGetAuthentication):
         """
         Asserts the requested `SensorPermission` is returned by the api.
         """
-        sensor, user = await create_sensor_and_extract_user(superuser_token)
-        async with async_fake_session_maker() as session:
-            await session.execute(delete(SensorPermission))
-            await session.commit()
-
-            sensor_permission: SensorPermission = SensorPermission(
-                user_id=user.id, sensor_id=sensor.id, read=True, write=False
-            )
-            session.add(sensor_permission)
-            await session.commit()
-            await session.refresh(sensor_permission)
+        sensor, user, sensor_permission = await create_user_write_permission(superuser_token)
 
         response: httpx.Response = self.client.get(
             f"{self._get_path}?user_id={user.id}&sensor_id={sensor.id}",
@@ -151,7 +165,6 @@ class TestGetSensorPermission(_TestGetAuthentication):
         assert response.json() == sensor_permission.model_dump(mode="json")
 
 
-# ToDO Improve the duplicated code
 class TestDeleteSensorPermission(_TestDeleteAuthentication):
 
     @property
@@ -183,21 +196,11 @@ class TestDeleteSensorPermission(_TestDeleteAuthentication):
         assert response.json() == {"detail": "This permission does not exist."}
 
     @pytest.mark.asyncio
-    async def test_delete_sensor(self, superuser_token: str):
+    async def test_delete_sensor_permission(self, superuser_token: str):
         """
         Asserts the requested `SensorPermission` is deleted by the api.
         """
-        sensor, user = await create_sensor_and_extract_user(superuser_token)
-        async with async_fake_session_maker() as session:
-            await session.execute(delete(SensorPermission))
-            await session.commit()
-
-            sensor_permission: SensorPermission = SensorPermission(
-                user_id=user.id, sensor_id=sensor.id, read=True, write=False
-            )
-            session.add(sensor_permission)
-            await session.commit()
-            await session.refresh(sensor_permission)
+        sensor, user, sensor_permission = await create_user_write_permission(superuser_token)
 
         response: httpx.Response = self.client.delete(
             f"{self._get_path}?user_id={user.id}&sensor_id={sensor.id}",

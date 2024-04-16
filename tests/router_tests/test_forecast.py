@@ -2,7 +2,6 @@ import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
-from api.models.forecast_models import Forecast
 from tests.utils.authentication_tests import _TestGetAuthentication
 from tests.utils.fixtures import token
 from tests.utils.forecast_dump import forecast_json_dump
