@@ -22,7 +22,8 @@ async def get_forecast_data(*, lat: str, lon: str) -> Forecast | None:
         url = BASE_URL + f"?lat={lat}&lon={lon}&units=metric&lang=de&appid={OPENWEATHERMAP_KEY}"
         async with httpx.AsyncClient() as client:
             response: httpx.Response = await client.get(url)
-            print(response.json())
+            if response.status_code != 200:
+                return None
             forecast = Forecast(**response.json())
             buffer.add(lat, lon, forecast)
 

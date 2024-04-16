@@ -111,5 +111,5 @@ async def get_current_user(
 
 async def get_current_superuser(user: Annotated[DBUser, Depends(get_current_user)]):
     if not user.superuser:
-        raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="The user doesn't have enough privileges")
     return user

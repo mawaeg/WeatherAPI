@@ -132,7 +132,6 @@ async def get_sensor_data(
         select(SensorData).where(SensorData.sensor_id == sensor_id).order_by(SensorData.id.desc()).limit(amount)
     )
     sensors = result.scalars().all()
-    sensor = sensors[0]
     return sensors[::-1]
 
 
