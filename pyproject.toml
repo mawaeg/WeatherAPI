@@ -6,3 +6,6 @@ profile = "black"
 line_length = 120
 combine_as_imports = true
 combine_star = true
+
+[tool.coverage.run]
+concurrency=["thread", "greenlet"]
