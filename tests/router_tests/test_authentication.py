@@ -5,11 +5,11 @@ from sqlmodel import delete
 
 from api.main import app
 from api.models.database_models import DBUser
-from api.utils.database import get_session
+from api.utils.database import get_engine
 from api.utils.security import get_current_user, get_password_hash
-from tests.utils.fake_db import async_session_maker, initialize_fake_database, override_get_session
+from tests.utils.fake_db import async_fake_session_maker, initialize_fake_database, override_get_engine
 
-app.dependency_overrides[get_session] = override_get_session
+app.dependency_overrides[get_engine] = override_get_engine
 client: TestClient = TestClient(app)
 
 
@@ -18,7 +18,7 @@ async def create_db_user() -> tuple[str, str, str]:
     password = "test_password"
     hashed_password = get_password_hash(password)
     await initialize_fake_database()
-    async with async_session_maker() as session:
+    async with async_fake_session_maker() as session:
         await session.execute(delete(DBUser))
         await session.commit()
 
@@ -53,7 +53,7 @@ async def test_fetch_access_token():
     response: httpx.Response = client.post("/token", data={"username": username, "password": password})
     assert response.status_code == 200
     assert response.json()["token_type"] == "bearer"
-    async with async_session_maker() as session:
+    async with async_fake_session_maker() as session:
         user: DBUser = await get_current_user(response.json()["access_token"], session)
     assert user.username == username
     assert user.hashed_password == hashed_password

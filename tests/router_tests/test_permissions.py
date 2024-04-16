@@ -6,7 +6,7 @@ from api.models.database_models import DBUser, Sensor, SensorPermission
 from api.utils.security import get_current_user
 from tests.utils.assertions import assert_missing_privileges
 from tests.utils.authentication_tests import _TestDeleteAuthentication, _TestGetAuthentication, _TestPutAuthentication
-from tests.utils.fake_db import async_session_maker
+from tests.utils.fake_db import async_fake_session_maker
 from tests.utils.fixtures import superuser_token, token
 
 
@@ -19,7 +19,7 @@ async def create_sensor_and_extract_user(token: str) -> tuple[Sensor, DBUser]:
     Returns:
         The created `Sensor` and the `DBUser`
     """
-    async with async_session_maker() as session:
+    async with async_fake_session_maker() as session:
         # Delete all sensors to avoid error because of duplicated
         await session.execute(delete(Sensor))
         await session.commit()
@@ -61,7 +61,7 @@ class TestPutSensorPermission(_TestPutAuthentication):
         """
         assert response.status_code == 201
 
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             result = await session.execute(
                 select(SensorPermission).where(
                     SensorPermission.user_id == sensor_permission_json["user_id"],
@@ -117,7 +117,7 @@ class TestGetSensorPermission(_TestGetAuthentication):
         """
         Asserts the api raises an error when the requested sensor permission is not existing.
         """
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             await session.execute(delete(SensorPermission))
             await session.commit()
         response: httpx.Response = self.client.get(
@@ -132,7 +132,7 @@ class TestGetSensorPermission(_TestGetAuthentication):
         Asserts the requested `SensorPermission` is returned by the api.
         """
         sensor, user = await create_sensor_and_extract_user(superuser_token)
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             await session.execute(delete(SensorPermission))
             await session.commit()
 
@@ -173,7 +173,7 @@ class TestDeleteSensorPermission(_TestDeleteAuthentication):
         """
         Asserts the api raises an error when the requested sensor permission is not existing.
         """
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             await session.execute(delete(SensorPermission))
             await session.commit()
         response: httpx.Response = self.client.delete(
@@ -188,7 +188,7 @@ class TestDeleteSensorPermission(_TestDeleteAuthentication):
         Asserts the requested `SensorPermission` is deleted by the api.
         """
         sensor, user = await create_sensor_and_extract_user(superuser_token)
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             await session.execute(delete(SensorPermission))
             await session.commit()
 
@@ -205,7 +205,7 @@ class TestDeleteSensorPermission(_TestDeleteAuthentication):
         )
         assert response.status_code == 204
 
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             result = await session.execute(select(SensorPermission).where(SensorPermission.id == sensor_permission.id))
             new_sensor_permission: SensorPermission | None = result.scalars().first()
         assert new_sensor_permission is None

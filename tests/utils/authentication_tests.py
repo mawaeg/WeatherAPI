@@ -5,9 +5,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from api.utils.database import get_session
+from api.utils.database import get_engine
 from tests.utils.assertions import assert_invalid_credentials, assert_not_authenticated
-from tests.utils.fake_db import override_get_session
+from tests.utils.fake_db import override_get_engine
 from tests.utils.fixtures import token
 
 
@@ -25,7 +25,7 @@ class TestBase:
     This is needed as pytest detects no test classes with a constructor.
     """
 
-    app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_engine] = override_get_engine
     _client: TestClient = TestClient(app)
 
     @property

@@ -9,7 +9,7 @@ from api.models.database_models import DBUser, Sensor, SensorData, SensorPermiss
 from api.utils.security import get_current_user
 from tests.utils.assertions import assert_missing_privileges
 from tests.utils.authentication_tests import _TestGetAuthentication, _TestPostAuthentication
-from tests.utils.fake_db import async_session_maker
+from tests.utils.fake_db import async_fake_session_maker
 from tests.utils.fixtures import superuser_token, token
 
 
@@ -17,7 +17,7 @@ async def clear_sensors():
     """
     Clears all `Sensor`s from the testing database
     """
-    async with async_session_maker() as session:
+    async with async_fake_session_maker() as session:
         await session.execute(delete(Sensor))
         await session.commit()
 
@@ -34,7 +34,7 @@ async def create_sensor(name: str = "Sensor1") -> Sensor:
     await clear_sensors()
 
     sensor: str = Sensor(name=name)
-    async with async_session_maker() as session:
+    async with async_fake_session_maker() as session:
         session.add(sensor)
         await session.commit()
         await session.refresh(sensor)
@@ -51,7 +51,7 @@ async def create_sensor_permission(token: str, sensor: Sensor, *, write: bool = 
         write (bool): The write permission that should be set.
         read (bool): The read permission that should be set.
     """
-    async with async_session_maker() as session:
+    async with async_fake_session_maker() as session:
         await session.execute(delete(SensorPermission))
         await session.commit()
         # We need to user from the token to create the correct sensor permission.
@@ -81,7 +81,7 @@ class TestGetSensors(_TestGetAuthentication):
 
         # Insert fake sensors
         sensors = [Sensor(name="Sensor1"), Sensor(name="Sensor2")]
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             await clear_sensors()
             for sensor in sensors:
                 session.add(sensor)
@@ -159,7 +159,7 @@ class TestCreateSensor(_TestPostAuthentication):
         assert response.json().get("name") == data["name"]
 
         # Assert the sensor was added to the database.
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             result = await session.execute(select(Sensor).where(Sensor.id == response.json().get("id")))
             sensor: Sensor | None = result.scalars().first()
         assert sensor is not None
@@ -177,7 +177,7 @@ class TestCreateSensorData(_TestPostAuthentication):
         """
         Asserts that the creation fails if the user has no write permissions for the sensor.
         """
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             await session.execute(delete(SensorPermission))
             await session.commit()
 
@@ -208,7 +208,7 @@ class TestCreateSensorData(_TestPostAuthentication):
         assert response.status_code == 201
 
         # Assert the sensor data was added to the database.
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             result = await session.execute(select(SensorData).where(SensorData.id == response.json().get("id")))
             sensor_data: SensorData | None = result.scalars().first()
         assert sensor_data is not None
@@ -222,7 +222,7 @@ class _TestGetSensorDataBase(_TestGetAuthentication):
         """
         Asserts the request fails when the user does not have permissions to read the data.
         """
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             await session.execute(delete(SensorPermission))
             await session.commit()
 
@@ -254,7 +254,7 @@ class TestGetSensorData(_TestGetSensorDataBase):
             SensorData(sensor_id=sensor.id, temperature=1.23, humidity=54.32, pressure=1234, voltage=3.21),
             # SensorData(sensor_id=sensor.id, temperature=32.1, humidity=23.45, pressure=4321, voltage=1.23),
         ]
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             for data in sensor_data:
                 session.add(data)
                 await session.commit()
@@ -278,7 +278,7 @@ class TestGetSensorDataDaily(_TestGetSensorDataBase):
         """
         Asserts the api is returning the expected daily data when authenticated.
         """
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             await session.execute(delete(SensorData))
             await session.commit()
 
@@ -289,7 +289,7 @@ class TestGetSensorDataDaily(_TestGetSensorDataBase):
         # Insert random temperatures in the database
         temps = random.sample(range(100), 2)
 
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             for temp in temps:
                 data: SensorData = SensorData(
                     sensor_id=sensor.id, temperature=temp, humidity=54.32, pressure=1234, voltage=3.21

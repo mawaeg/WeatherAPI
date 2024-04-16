@@ -1,3 +1,6 @@
+from typing import Annotated
+
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -5,10 +8,14 @@ from sqlmodel import SQLModel
 
 from SECRETS import PSQL_URL
 
-engine: AsyncEngine = create_async_engine(PSQL_URL, echo=True, future=True)
+base_engine: AsyncEngine = create_async_engine(PSQL_URL, echo=True, future=True)
 
 
-async def get_session() -> AsyncSession:
+async def get_engine() -> AsyncEngine:
+    return base_engine  # pragma: no cover: Real database access cannot be properly tested
+
+
+async def get_session(engine: Annotated[AsyncEngine, Depends(get_engine)]) -> AsyncSession:
     """
     Creates an Async database session from the engine
 
@@ -20,16 +27,16 @@ async def get_session() -> AsyncSession:
         yield session
 
 
-async def initialize_database():
+async def initialize_database():  # pragma: no cover: Real database access cannot be properly tested
     """
     Initializes the database engine and creates all tables.
     """
-    async with engine.begin() as connection:
+    async with base_engine.begin() as connection:
         await connection.run_sync(SQLModel.metadata.create_all)
 
 
-async def dispose_database():
+async def dispose_database():  # pragma: no cover: Real database access cannot be properly tested
     """
     Disposes the database engine.
     """
-    await engine.dispose()
+    await base_engine.dispose()

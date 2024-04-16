@@ -3,7 +3,7 @@ from sqlmodel import select
 
 from api.models.database_models import DBUser
 from api.utils.security import create_access_token, get_password_hash
-from tests.utils.fake_db import async_session_maker, initialize_fake_database
+from tests.utils.fake_db import async_fake_session_maker, initialize_fake_database
 
 
 @pytest_asyncio.fixture
@@ -16,7 +16,7 @@ async def token() -> str:
     """
     await initialize_fake_database()
     test_username: str = "test_user"
-    async with async_session_maker() as session:
+    async with async_fake_session_maker() as session:
         # Only create the user if not already existing.
         result = await session.execute(select(DBUser).where(DBUser.username == test_username))
         user = result.scalars().first()
@@ -39,7 +39,7 @@ async def superuser_token() -> str:
     """
     await initialize_fake_database()
     test_username: str = "test_superuser"
-    async with async_session_maker() as session:
+    async with async_fake_session_maker() as session:
         # Only create the user if not already existing.
         result = await session.execute(select(DBUser).where(DBUser.username == test_username))
         user = result.scalars().first()

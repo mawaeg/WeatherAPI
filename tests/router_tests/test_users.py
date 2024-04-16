@@ -6,7 +6,7 @@ from api.models.database_models import DBUser
 from api.utils.security import get_current_user
 from tests.utils.assertions import assert_missing_privileges, assert_user_already_exists
 from tests.utils.authentication_tests import _TestGetAuthentication, _TestPostAuthentication
-from tests.utils.fake_db import async_session_maker
+from tests.utils.fake_db import async_fake_session_maker
 from tests.utils.fixtures import superuser_token, token
 
 
@@ -34,7 +34,7 @@ class TestGetUsers(_TestGetAuthentication):
         As still this test mostly just copies the route implementation itself
         """
         # ToDo Does this make sense here, as it is just the code copied from the actual route.
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             result = await session.execute(select(DBUser))
             users = result.scalars().all()
 
@@ -56,7 +56,7 @@ class TestGetUsersMe(_TestGetAuthentication):
         """
         Assert the /users/me endpoint returns the correct user.
         """
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             current_user: DBUser = await get_current_user(token, session)
 
         response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
@@ -79,7 +79,7 @@ class TestCreateUser(_TestPostAuthentication):
         return {"username": "test_create_user", "password": "test_password", "superuser": False}
 
     async def clear_test_user(self) -> None:
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             await session.execute(delete(DBUser).where(DBUser.username == self.test_user["username"]))
             await session.commit()
 
@@ -107,7 +107,7 @@ class TestCreateUser(_TestPostAuthentication):
         assert response.json()["username"] == self.test_user["username"]
         assert response.json()["superuser"] == self.test_user["superuser"]
 
-        async with async_session_maker() as session:
+        async with async_fake_session_maker() as session:
             result = await session.execute(select(DBUser).where(DBUser.username == self.test_user["username"]))
             user: DBUser | None = result.scalars().first()
         assert user
