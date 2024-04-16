@@ -6,7 +6,9 @@ from sqlmodel import delete
 from api.main import app
 from api.models.database_models import DBUser
 from api.utils.database import get_engine
+from api.utils.http_exceptions import INCORRECT_PASSWORD
 from api.utils.security import get_current_user, get_password_hash
+from tests.utils.assertions import assert_HTTPException_EQ
 from tests.utils.fake_db import async_fake_session_maker, initialize_fake_database, override_get_engine
 
 app.dependency_overrides[get_engine] = override_get_engine
@@ -42,8 +44,7 @@ async def test_fetch_access_token_wrong_credentials(add_to_username: str, add_to
     response: httpx.Response = client.post(
         "/token", data={"username": username + add_to_username, "password": password + add_to_password}
     )
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Incorrect username or password"
+    assert_HTTPException_EQ(response, INCORRECT_PASSWORD)
 
 
 @pytest.mark.asyncio

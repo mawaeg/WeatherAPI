@@ -6,7 +6,8 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 from api.utils.database import get_engine
-from tests.utils.assertions import assert_invalid_credentials, assert_not_authenticated
+from api.utils.http_exceptions import INVALID_CREDENTIALS
+from tests.utils.assertions import NOT_AUTHENTICATED_EXCEPTION, assert_HTTPException_EQ
 from tests.utils.fake_db import override_get_engine
 from tests.utils.fixtures import token
 
@@ -66,7 +67,7 @@ class TestBase:
             case _:
                 raise NotImplemented
 
-        assert_not_authenticated(response)
+        assert_HTTPException_EQ(response, NOT_AUTHENTICATED_EXCEPTION)
 
     @pytest.mark.asyncio
     async def test_wrong_authentication(self, token: str):
@@ -92,7 +93,7 @@ class TestBase:
             case _:
                 raise NotImplemented
 
-        assert_invalid_credentials(response)
+        assert_HTTPException_EQ(response, INVALID_CREDENTIALS)
 
 
 class _TestGetAuthentication(TestBase):

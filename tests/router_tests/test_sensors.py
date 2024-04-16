@@ -6,8 +6,9 @@ from pytest_lazy_fixtures import lf
 from sqlmodel import delete, select
 
 from api.models.database_models import DBUser, Sensor, SensorData, SensorPermission
+from api.utils.http_exceptions import MISSING_PRIVILEGES, NO_SENSOR_WITH_THIS_ID
 from api.utils.security import get_current_user
-from tests.utils.assertions import assert_missing_privileges
+from tests.utils.assertions import assert_HTTPException_EQ
 from tests.utils.authentication_tests import _TestGetAuthentication, _TestPostAuthentication
 from tests.utils.fake_db import async_fake_session_maker
 from tests.utils.fixtures import superuser_token, token
@@ -107,8 +108,8 @@ class TestGetSensor(_TestGetAuthentication):
 
         await clear_sensors()
         response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
-        assert response.status_code == 404
-        assert response.json().get("detail") == "No sensor with this id."
+
+        assert_HTTPException_EQ(response, NO_SENSOR_WITH_THIS_ID)
 
     @pytest.mark.asyncio
     async def test_get_sensor(self, token: str):
@@ -140,7 +141,7 @@ class TestCreateSensor(_TestPostAuthentication):
         response: httpx.Response = self.client.post(
             self._get_path, headers={"Authorization": f"Bearer {token}"}, json=data
         )
-        assert_missing_privileges(response)
+        assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.asyncio
     async def test_create_sensor(self, superuser_token: str):
@@ -188,7 +189,7 @@ class TestCreateSensorData(_TestPostAuthentication):
         response: httpx.Response = self.client.post(
             f"sensor/{sensor.id}/data", headers={"Authorization": f"Bearer {token}"}, json=data
         )
-        assert_missing_privileges(response)
+        assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.asyncio
     async def test_create_sensor_data(self, token: str):
@@ -227,7 +228,7 @@ class _TestGetSensorDataBase(_TestGetAuthentication):
             await session.commit()
 
         response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
-        assert_missing_privileges(response)
+        assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
 
 class TestGetSensorData(_TestGetSensorDataBase):

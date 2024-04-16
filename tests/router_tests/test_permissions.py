@@ -3,8 +3,9 @@ import pytest
 from sqlmodel import delete, select
 
 from api.models.database_models import DBUser, Sensor, SensorPermission
+from api.utils.http_exceptions import MISSING_PRIVILEGES, PERMISSION_NOT_EXISTING
 from api.utils.security import get_current_user
-from tests.utils.assertions import assert_missing_privileges
+from tests.utils.assertions import assert_HTTPException_EQ
 from tests.utils.authentication_tests import _TestDeleteAuthentication, _TestGetAuthentication, _TestPutAuthentication
 from tests.utils.fake_db import async_fake_session_maker
 from tests.utils.fixtures import superuser_token, token
@@ -73,7 +74,7 @@ class TestPutSensorPermission(_TestPutAuthentication):
         response: httpx.Response = self.client.put(
             self._get_path, headers={"Authorization": f"Bearer {token}"}, json=sensor_permission
         )
-        assert_missing_privileges(response)
+        assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @staticmethod
     async def assert_created_correctly(response: httpx.Response, sensor_permission_json: dict) -> None:
@@ -134,7 +135,7 @@ class TestGetSensorPermission(_TestGetAuthentication):
         response: httpx.Response = self.client.get(
             f"{self._get_path}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {token}"}
         )
-        assert_missing_privileges(response)
+        assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.asyncio
     async def test_get_sensor_permission_no_permission(self, superuser_token: str):
@@ -147,8 +148,7 @@ class TestGetSensorPermission(_TestGetAuthentication):
         response: httpx.Response = self.client.get(
             f"{self._get_path}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {superuser_token}"}
         )
-        assert response.status_code == 404
-        assert response.json() == {"detail": "This permission does not exist yet."}
+        assert_HTTPException_EQ(response, PERMISSION_NOT_EXISTING)
 
     @pytest.mark.asyncio
     async def test_get_sensor(self, superuser_token: str):
@@ -179,7 +179,7 @@ class TestDeleteSensorPermission(_TestDeleteAuthentication):
         response: httpx.Response = self.client.delete(
             f"{self._get_path}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {token}"}
         )
-        assert_missing_privileges(response)
+        assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.asyncio
     async def test_delete_sensor_permission_no_permission(self, superuser_token: str):
@@ -192,8 +192,7 @@ class TestDeleteSensorPermission(_TestDeleteAuthentication):
         response: httpx.Response = self.client.delete(
             f"{self._get_path}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {superuser_token}"}
         )
-        assert response.status_code == 404
-        assert response.json() == {"detail": "This permission does not exist."}
+        assert_HTTPException_EQ(response, PERMISSION_NOT_EXISTING)
 
     @pytest.mark.asyncio
     async def test_delete_sensor_permission(self, superuser_token: str):

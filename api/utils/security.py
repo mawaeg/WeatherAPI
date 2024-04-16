@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -10,6 +10,7 @@ from sqlmodel import select
 
 from api.models.database_models import DBUser
 from api.utils.database import get_session
+from api.utils.http_exceptions import INVALID_CREDENTIALS, MISSING_PRIVILEGES
 from SECRETS import SECRET_KEY
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -91,25 +92,20 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], session: Annotated[AsyncSession, Depends(get_session)]
 ) -> DBUser:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         username: str = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            raise INVALID_CREDENTIALS
     except JWTError:
-        raise credentials_exception
+        raise INVALID_CREDENTIALS
     user = await get_user(username, session)
     if user is None:
-        raise credentials_exception
+        raise INVALID_CREDENTIALS
     return user
 
 
 async def get_current_superuser(user: Annotated[DBUser, Depends(get_current_user)]):
     if not user.superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="The user doesn't have enough privileges")
+        raise MISSING_PRIVILEGES
     return user

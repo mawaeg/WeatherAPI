@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlmodel import delete
 
 from api.models.database_models import DBUser
+from api.utils.http_exceptions import INVALID_CREDENTIALS
 from api.utils.security import create_access_token, get_current_user
 from tests.utils.fake_db import async_fake_session_maker, initialize_fake_database
 
@@ -22,5 +23,4 @@ async def test_get_current_user_invalid_token(token_data: str):
         with pytest.raises(HTTPException) as exception:
             await get_current_user(access_token, session)
 
-        assert exception.value.status_code == 401
-        assert exception.value.detail == "Could not validate credentials"
+        assert exception.value == INVALID_CREDENTIALS

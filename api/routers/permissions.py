@@ -1,12 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from api.models.database_models import SensorPermission, SensorPermissionCreate, User
 from api.models.response_models import NotFoundError
 from api.utils.database import get_session
+from api.utils.http_exceptions import PERMISSION_NOT_EXISTING
 from api.utils.security import get_current_superuser
 
 permissions_router = APIRouter(tags=["Permissions"], prefix="/permissions")
@@ -99,7 +100,7 @@ async def get_sensor_permission(
     """
     sensor_permission: SensorPermission | None = await select_sensor_permission(session, user_id, sensor_id)
     if not sensor_permission:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "This permission does not exist yet.")
+        raise PERMISSION_NOT_EXISTING
     return sensor_permission
 
 
@@ -125,7 +126,7 @@ async def delete_sensor_permission(
     """
     sensor_permission: SensorPermission | None = await select_sensor_permission(session, user_id, sensor_id)
     if not sensor_permission:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "This permission does not exist.")
+        raise PERMISSION_NOT_EXISTING
     await session.delete(sensor_permission)
     await session.commit()
     return None

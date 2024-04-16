@@ -1,10 +1,10 @@
 from enum import Enum
 
-from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from api.models.database_models import DBUser, SensorPermission
+from api.utils.http_exceptions import MISSING_PRIVILEGES
 
 
 class PermissionType(Enum):
@@ -55,7 +55,7 @@ async def get_user_with_permission(
         )
     sensor_permission: SensorPermission | None = result.scalars().first()
     if not sensor_permission:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="The user doesn't have enough privileges")
+        raise MISSING_PRIVILEGES
     return True
 
 

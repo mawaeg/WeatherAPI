@@ -3,8 +3,9 @@ import pytest
 from sqlmodel import delete, select
 
 from api.models.database_models import DBUser
+from api.utils.http_exceptions import MISSING_PRIVILEGES, USER_ALREADY_EXISTS
 from api.utils.security import get_current_user
-from tests.utils.assertions import assert_missing_privileges, assert_user_already_exists
+from tests.utils.assertions import assert_HTTPException_EQ
 from tests.utils.authentication_tests import _TestGetAuthentication, _TestPostAuthentication
 from tests.utils.fake_db import async_fake_session_maker
 from tests.utils.fixtures import superuser_token, token
@@ -22,7 +23,7 @@ class TestGetUsers(_TestGetAuthentication):
         Asserts the api is returning an error when the route is called with a non superuser.
         """
         response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
-        assert_missing_privileges(response)
+        assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.asyncio
     async def test_get_users(self, superuser_token: str):
@@ -91,7 +92,7 @@ class TestCreateUser(_TestPostAuthentication):
         response: httpx.Response = self.client.post(
             self._get_path, headers={"Authorization": f"Bearer {token}"}, json=self.test_user
         )
-        assert_missing_privileges(response)
+        assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.asyncio
     async def test_create_user(self, superuser_token: str):
@@ -127,4 +128,4 @@ class TestCreateUser(_TestPostAuthentication):
         response: httpx.Response = self.client.post(
             self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=self.test_user
         )
-        assert_user_already_exists(response)
+        assert_HTTPException_EQ(response, USER_ALREADY_EXISTS)

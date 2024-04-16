@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql import func
 from sqlmodel import NUMERIC, cast, select
@@ -8,6 +8,7 @@ from sqlmodel import NUMERIC, cast, select
 from api.models.database_models import DBUser, Sensor, SensorCreate, SensorData, SensorDataCreate, User
 from api.models.response_models import DailySensorData, NotFoundError
 from api.utils.database import get_session
+from api.utils.http_exceptions import NO_SENSOR_WITH_THIS_ID
 from api.utils.permissions import get_user_read_permissions, get_user_write_permissions
 from api.utils.security import get_current_superuser, get_current_user
 
@@ -54,7 +55,7 @@ async def get_sensor(
     """
     sensor: Sensor | None = await session.get(Sensor, sensor_id)
     if not sensor:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "No sensor with this id.")
+        raise NO_SENSOR_WITH_THIS_ID
     return sensor
 
 

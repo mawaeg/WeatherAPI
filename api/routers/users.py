@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -8,6 +8,7 @@ from sqlmodel import select
 from api.models.database_models import DBUser, User, UserCreate
 from api.models.response_models import BadRequest
 from api.utils.database import get_session
+from api.utils.http_exceptions import USER_ALREADY_EXISTS
 from api.utils.security import get_current_superuser, get_current_user, get_password_hash
 
 users_router = APIRouter(tags=["Users"], prefix="/users")
@@ -70,5 +71,5 @@ async def create_user(
         session.add(DBUser(username=user.username, hashed_password=hashed_password))
         await session.commit()
     except IntegrityError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A user with that name already exists.")
+        raise USER_ALREADY_EXISTS
     return User(username=user.username)

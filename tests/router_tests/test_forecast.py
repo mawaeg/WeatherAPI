@@ -2,6 +2,8 @@ import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
+from api.utils.http_exceptions import NO_FORECAST_DATA
+from tests.utils.assertions import assert_HTTPException_EQ
 from tests.utils.authentication_tests import _TestGetAuthentication
 from tests.utils.fixtures import token
 from tests.utils.forecast_dump import forecast_json_dump
@@ -18,8 +20,7 @@ class TestForecast(_TestGetAuthentication):
         httpx_mock.add_response(status_code=503)
 
         response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
-        assert response.status_code == 502
-        assert response.json()["detail"] == "Could not retrieve current forecast data."
+        assert_HTTPException_EQ(response, NO_FORECAST_DATA)
 
     @pytest.mark.asyncio
     async def test_get_forecast(self, token: str, httpx_mock: HTTPXMock):
