@@ -35,7 +35,9 @@ async def root():
 
 
 @app.get("/fire/{token}")
-async def fire_notification(session: Annotated[AsyncSession, Depends(get_session)], token: str) -> bool:
+async def fire_notification(
+    session: Annotated[AsyncSession, Depends(get_session)], token: str
+) -> bool:  # pragma no cover: This is only a test route
     """
     Report a fire detected by a smoke detector.
     Args:
