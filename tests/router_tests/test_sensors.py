@@ -43,6 +43,23 @@ async def create_sensor(name: str = "Sensor1") -> Sensor:
     return sensor
 
 
+async def create_sensors() -> list[Sensor]:
+    """
+    Creates two `Sensor`s in the testing database.
+
+    Returns:
+        The created `Sensor`s.
+    """
+    sensors = [Sensor(name="Sensor1"), Sensor(name="Sensor2")]
+    async with async_fake_session_maker() as session:
+        await clear_sensors()
+        for sensor in sensors:
+            session.add(sensor)
+            await session.commit()
+            await session.refresh(sensor)
+    return sensors
+
+
 async def create_sensor_permission(token: str, sensor: Sensor, *, write: bool = False, read: bool = False) -> None:
     """
     Creates a `SensorPermission` for the given user (via the token) and `Sensor`.
@@ -75,23 +92,54 @@ class TestGetSensors(_TestGetAuthentication):
         return "/sensor/list"
 
     @pytest.mark.asyncio
-    async def test_get_sensors(self, token: str):
+    async def test_get_sensors_superuser(self, superuser_token: str):
         """
-        Asserts the api is returning the expected data when authenticated.
+        Asserts the api is returning all existing sensors when authenticated as superuser.
         """
 
         # Insert fake sensors
-        sensors = [Sensor(name="Sensor1"), Sensor(name="Sensor2")]
-        async with async_fake_session_maker() as session:
-            await clear_sensors()
-            for sensor in sensors:
-                session.add(sensor)
-                await session.commit()
-                await session.refresh(sensor)
+        sensors: list[Sensor] = await create_sensors()
+
+        response: httpx.Response = self.client.get(
+            self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
+        )
+        assert response.status_code == 200
+
+        # We only check for the len, as the created model is not the same as the returned one.
+        # ToDo Should there be a check whether it actually returns a `UserSensor`?
+        assert len(response.json()) == len(sensors)
+
+    @pytest.mark.asyncio
+    async def test_get_sensors(self, token: str):
+        """
+        Asserts the api is returning all sensors with permissions for the current authenticated user.
+        """
+
+        # Insert fake sensors
+        sensors: list[Sensor] = await create_sensors()
+
+        await create_sensor_permission(token, sensors[0], read=True)
 
         response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
-        assert response.json() == [sensor.model_dump() for sensor in sensors]
+        assert len(response.json()) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_sensors_false_permission(self, token: str):
+        """
+        Asserts the api is not returning `Sensor`s where both of the `SensorPermission`s are False.
+
+        This test does not actually cover python code, but covers the logic of the rather complicated sql query.
+        """
+
+        # Insert fake sensors
+        sensors: list[Sensor] = await create_sensors()
+
+        await create_sensor_permission(token, sensors[0])
+
+        response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+        assert len(response.json()) == 0
 
 
 class TestGetSensor(_TestGetAuthentication):

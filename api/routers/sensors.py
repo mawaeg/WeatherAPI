@@ -3,10 +3,18 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql import func
-from sqlmodel import NUMERIC, cast, select
+from sqlmodel import NUMERIC, cast, or_, select
 
-from api.models.database_models import DBUser, Sensor, SensorCreate, SensorData, SensorDataCreate, User
-from api.models.response_models import DailySensorData, NotFoundError
+from api.models.database_models import (
+    DBUser,
+    Sensor,
+    SensorCreate,
+    SensorData,
+    SensorDataCreate,
+    SensorPermission,
+    User,
+)
+from api.models.response_models import DailySensorData, NotFoundError, UserSensor
 from api.utils.database import get_session
 from api.utils.http_exceptions import NO_SENSOR_WITH_THIS_ID
 from api.utils.permissions import get_user_read_permissions, get_user_write_permissions
@@ -15,22 +23,44 @@ from api.utils.security import get_current_superuser, get_current_user
 sensors_router = APIRouter(tags=["Sensors"], prefix="/sensor")
 
 
-@sensors_router.get("/list", response_model=list[Sensor])
+@sensors_router.get("/list", response_model=list[UserSensor])
 async def get_sensors(
-    session: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[User, Depends(get_current_user)]
+    session: Annotated[AsyncSession, Depends(get_session)], current_user: Annotated[DBUser, Depends(get_current_user)]
 ):
     """
-    Returns a list of all available sensors.
+    Returns a list of all sensors available to the current user.
     Args:
         session (AsyncSession): A database session.
         current_user (User): The user that is currently logged in.
 
     Returns:
-        A list of `Sensor`s.
+        A list of `UserSensor`s.
     """
-    result = await session.execute(select(Sensor))
-    sensors = result.scalars().all()
-    return sensors
+    if current_user.superuser:
+        result = await session.execute(select(Sensor))
+        sensors = result.scalars().all()
+        return [UserSensor(**sensor.dict(), user_id=current_user.id) for sensor in sensors]
+
+    result = await session.execute(
+        select(Sensor, SensorPermission)
+        .join(Sensor)
+        .where(
+            SensorPermission.user_id == current_user.id,
+            or_(SensorPermission.read == True, SensorPermission.write == True),
+        )
+    )
+
+    user_sensors: list[UserSensor] = [
+        UserSensor(
+            id=sensor.id,
+            user_id=permission.user_id,
+            name=sensor.name,
+            read=permission.read,
+            write=permission.write,
+        )
+        for sensor, permission in result
+    ]
+    return user_sensors
 
 
 @sensors_router.get(

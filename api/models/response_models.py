@@ -51,3 +51,15 @@ class DailySensorData(BaseModel):
 
     timestamp: date
     temperature: float
+
+
+class UserSensor(BaseModel):
+    """
+    Represents a `Sensor` with the connected `SensorPermission` for a given `DBUser`.
+    """
+
+    id: int
+    user_id: int
+    name: str
+    read: bool | None = True
+    write: bool | None = True
