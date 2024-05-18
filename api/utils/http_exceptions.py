@@ -22,6 +22,11 @@ NO_FORECAST_DATA = HTTPException(
     detail="Could not retrieve current forecast data.",
 )
 
+NO_SERVERSTATS_DATA = HTTPException(
+    status_code=status.HTTP_502_BAD_GATEWAY,
+    detail="Could not retrieve current forecast data.",
+)
+
 PERMISSION_NOT_EXISTING = HTTPException(
     status.HTTP_404_NOT_FOUND,
     "This permission does not exist.",
