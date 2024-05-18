@@ -19,7 +19,7 @@ class SunType(BaseModel):
 
 class MoonType(BaseModel):
     moonrise: int
-    moonrise: int
+    moonset: int
     moon_phase: float
 
 
