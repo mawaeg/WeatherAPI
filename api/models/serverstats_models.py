@@ -38,17 +38,13 @@ class LiveStats(BaseModel):
 
 
 class HistoryData(BaseModel, Generic[T]):
-    labels: list[str]
-    data: list[T]
-
-
-class HistoryStats(BaseModel):
-    full_cpu_usage: HistoryData[float]
-    load_per_core: HistoryData[float]
-    memory_usage: HistoryData[float]
-    memory_used: HistoryData[float]
-    disk_usage: HistoryData[float]
-    disk_used: HistoryData[float]
-    updates_available: HistoryData[float]
-    uptime: HistoryData[int]
-    traffic_total: HistoryData[float]
+    date: str
+    full_cpu_usage: float
+    load_per_core: float
+    memory_usage: float
+    memory_used: float
+    disk_usage: float
+    disk_used: float
+    updates_available: float
+    uptime: int
+    traffic_total: float
