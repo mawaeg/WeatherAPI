@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Column, DateTime, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 # ToDo Do we want / need relationships?
@@ -71,7 +71,7 @@ class SensorData(SensorDataCreate, DatabaseModelBase, table=True):
     Represents a SensorData from the database.
     """
 
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False), default_factory=datetime.now)
     sensor_id: int = Field(foreign_key="sensor.id")
     # sensor: Sensor = Relationship(back_populates="data")
 
