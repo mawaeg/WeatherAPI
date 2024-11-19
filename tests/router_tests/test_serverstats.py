@@ -2,12 +2,15 @@ import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
-from api.models.serverstats_models import LiveStats
 from api.utils.http_exceptions import MISSING_PRIVILEGES, NO_SERVERSTATS_DATA
 from tests.utils.assertions import assert_HTTPException_EQ
 from tests.utils.authentication_tests import _TestGetAuthentication
 from tests.utils.fixtures import superuser_token, token
-from tests.utils.serverstats_dump import serverstats_live_dump, serverstats_history_dump
+from tests.utils.serverstats_dump import (
+    serverstats_history_dump,
+    serverstats_history_expected_result,
+    serverstats_live_dump,
+)
 
 
 class TestGetServerStatsLive(_TestGetAuthentication):
@@ -85,8 +88,23 @@ class TestGetServerStatsHistory(_TestGetAuthentication):
         """
         httpx_mock.add_response(json=serverstats_history_dump)
 
+        max_amount: int = len(serverstats_history_dump["data"]["chart"]["full_cpu_usage"]["labels"])
         response: httpx.Response = self.client.get(
-            self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
+            self._get_path, params={"entries": max_amount}, headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert response.status_code == 200
-        assert response.json() == serverstats_history_dump["data"]["chart"]
+        assert response.json() == serverstats_history_expected_result
+
+    @pytest.mark.asyncio
+    async def test_get_history_serverstats_not_enough_entries(self, superuser_token: str, httpx_mock: HTTPXMock):
+        """
+        Assert the api is returning an error when the number of requested entries is bigger than the available amount of entries..
+        """
+        httpx_mock.add_response(json=serverstats_history_dump)
+
+        max_amount: int = len(serverstats_history_dump["data"]["chart"]["full_cpu_usage"]["labels"]) + 1
+        response: httpx.Response = self.client.get(
+            self._get_path, params={"entries": max_amount}, headers={"Authorization": f"Bearer {superuser_token}"}
+        )
+
+        assert_HTTPException_EQ(response, NO_SERVERSTATS_DATA)
