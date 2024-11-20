@@ -23,6 +23,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r dev-requirements.txt
+    - name: Setup dummy SECRET file
+      run: |
+        touch SECRETS.py
+        echo "PSQL_URL = 'postgresql+asyncpg://user:password@localhost:5432/database'" > SECRETS.py
     - name: Test with pytest
       run: |
         pytest --cov-report html --cov=api
