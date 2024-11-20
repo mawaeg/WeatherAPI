@@ -27,6 +27,9 @@ jobs:
       run: |
         touch SECRETS.py
         echo "PSQL_URL = 'postgresql+asyncpg://user:password@localhost:5432/database'" > SECRETS.py
+        echo "OPENWEATHERMAP_KEY = '1234qwertz'" > SECRETS.py
+        echo "SECRET_KEY = '1234qwertz'" > SECRETS.py
+        echo "SERVERSTATS_SETTINGS = {'hosting_id': '123', 'token': '1234qwertz'}" > SECRETS.py
     - name: Test with pytest
       run: |
         pytest --cov-report html --cov=api
