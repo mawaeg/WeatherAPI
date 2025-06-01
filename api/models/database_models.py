@@ -1,7 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, UniqueConstraint
-from sqlmodel import Field, SQLModel
+from sqlalchemy import DateTime, UniqueConstraint
+from sqlmodel import Column, Enum, Field, SQLModel
+
+from api.models.enum_models import SensorTypeModel
 
 # ToDo Do we want / need relationships?
 # Then: https://stackoverflow.com/questions/74252768/missinggreenlet-greenlet-spawn-has-not-been-called
@@ -43,6 +45,7 @@ class SensorCreate(SQLModel):
     """
 
     name: str
+    type: SensorTypeModel = Field(sa_column=Column(Enum(SensorTypeModel)))
 
 
 class Sensor(SensorCreate, DatabaseModelBase, table=True):
@@ -74,6 +77,24 @@ class SensorData(SensorDataCreate, DatabaseModelBase, table=True):
     timestamp: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False), default_factory=datetime.now)
     sensor_id: int = Field(foreign_key="sensor.id")
     # sensor: Sensor = Relationship(back_populates="data")
+
+
+class SensorStateCreate(SQLModel):
+    """
+    Model used to create a new "SensorState".
+    """
+
+    state: bool
+    voltage: float | None
+
+
+class SensorState(SensorStateCreate, DatabaseModelBase, table=True):
+    """
+    Represents a SensorState from the database.
+    """
+
+    timestamp: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False), default_factory=datetime.now)
+    sensor_id: int = Field(foreign_key="sensor.id")
 
 
 class User(SQLModel):

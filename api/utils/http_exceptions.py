@@ -41,3 +41,7 @@ USER_ALREADY_EXISTS = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,
     detail="A user with that name already exists.",
 )
+
+INVALID_SENSOR_TYPE = HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST, detail="This sensor is of an unsupported type for this operation."
+)

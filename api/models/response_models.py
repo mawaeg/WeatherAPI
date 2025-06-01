@@ -2,6 +2,8 @@ from datetime import date
 
 from pydantic import BaseModel
 
+from api.models.enum_models import SensorTypeModel
+
 
 class Token(BaseModel):
     """
@@ -61,5 +63,6 @@ class UserSensor(BaseModel):
     id: int
     user_id: int
     name: str
+    type: SensorTypeModel
     read: bool | None = True
     write: bool | None = True
