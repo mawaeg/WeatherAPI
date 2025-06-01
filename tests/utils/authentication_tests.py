@@ -34,7 +34,7 @@ class TestBase:
         return self._client
 
     @property
-    def _get_path(self) -> str:
+    async def _get_path(self) -> str:
         """
         This returns the path that is currently tested.
 
@@ -51,19 +51,21 @@ class TestBase:
         """
         raise NotImplemented
 
-    def test_no_authentication(self):
+    @pytest.mark.asyncio
+    async def test_no_authentication(self):
         """
         Asserts the api is returning and error when the route is called with no authentication.
         """
+        path = await self._get_path
         match self._get_method:
             case MethodType.GET:
-                response: httpx.Response = self.client.get(self._get_path)
+                response: httpx.Response = self.client.get(path)
             case MethodType.POST:
-                response: httpx.Response = self.client.post(self._get_path)
+                response: httpx.Response = self.client.post(path)
             case MethodType.PUT:
-                response: httpx.Response = self.client.put(self._get_path)
+                response: httpx.Response = self.client.put(path)
             case MethodType.DELETE:
-                response: httpx.Response = self.client.delete(self._get_path)
+                response: httpx.Response = self.client.delete(path)
             case _:
                 raise NotImplemented
 
@@ -77,19 +79,16 @@ class TestBase:
         # Invalidate token
         token += "_wrong"
 
+        path = await self._get_path
         match self._get_method:
             case MethodType.GET:
-                response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
+                response: httpx.Response = self.client.get(path, headers={"Authorization": f"Bearer {token}"})
             case MethodType.POST:
-                response: httpx.Response = self.client.post(
-                    self._get_path, headers={"Authorization": f"Bearer {token}"}
-                )
+                response: httpx.Response = self.client.post(path, headers={"Authorization": f"Bearer {token}"})
             case MethodType.PUT:
-                response: httpx.Response = self.client.put(self._get_path, headers={"Authorization": f"Bearer {token}"})
+                response: httpx.Response = self.client.put(path, headers={"Authorization": f"Bearer {token}"})
             case MethodType.DELETE:
-                response: httpx.Response = self.client.delete(
-                    self._get_path, headers={"Authorization": f"Bearer {token}"}
-                )
+                response: httpx.Response = self.client.delete(path, headers={"Authorization": f"Bearer {token}"})
             case _:
                 raise NotImplemented
 

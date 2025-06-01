@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 import httpx
@@ -6,7 +7,8 @@ from pytest_lazy_fixtures import lf
 from sqlmodel import delete, select
 
 from api.models.database_models import DBUser, Sensor, SensorData, SensorPermission
-from api.utils.http_exceptions import MISSING_PRIVILEGES, NO_SENSOR_WITH_THIS_ID
+from api.models.enum_models import SensorTypeModel
+from api.utils.http_exceptions import INVALID_SENSOR_TYPE, MISSING_PRIVILEGES, NO_SENSOR_WITH_THIS_ID
 from api.utils.security import get_current_user
 from tests.utils.assertions import assert_HTTPException_EQ
 from tests.utils.authentication_tests import _TestGetAuthentication, _TestPostAuthentication
@@ -23,18 +25,21 @@ async def clear_sensors():
         await session.commit()
 
 
-async def create_sensor(name: str = "Sensor1") -> Sensor:
+async def create_sensor(
+    *, name: str = "Sensor1", sensor_type: SensorTypeModel = SensorTypeModel.ENVIRONMENTAL
+) -> Sensor:
     """
     Creates a new `Sensor` in the testing database.
     Args:
         name (str): The name of the Sensor
+        sensor_type (SensorTypeModel): The type of the Sensor
 
     Returns:
         The created `Sensor`.
     """
     await clear_sensors()
 
-    sensor: str = Sensor(name=name)
+    sensor: str = Sensor(name=name, type=sensor_type)
     async with async_fake_session_maker() as session:
         session.add(sensor)
         await session.commit()
@@ -43,14 +48,16 @@ async def create_sensor(name: str = "Sensor1") -> Sensor:
     return sensor
 
 
-async def create_sensors() -> list[Sensor]:
+async def create_sensors(sensor_type: SensorTypeModel = SensorTypeModel.ENVIRONMENTAL) -> list[Sensor]:
     """
     Creates two `Sensor`s in the testing database.
+    Args:
+        sensor_type (SensorTypeModel): The type of the Sensor
 
     Returns:
         The created `Sensor`s.
     """
-    sensors = [Sensor(name="Sensor1"), Sensor(name="Sensor2")]
+    sensors = [Sensor(name="Sensor1", type=sensor_type), Sensor(name="Sensor2", type=sensor_type)]
     async with async_fake_session_maker() as session:
         await clear_sensors()
         for sensor in sensors:
@@ -88,7 +95,7 @@ async def create_sensor_permission(token: str, sensor: Sensor, *, write: bool = 
 class TestGetSensors(_TestGetAuthentication):
 
     @property
-    def _get_path(self) -> str:
+    async def _get_path(self) -> str:
         return "/sensor/list"
 
     @pytest.mark.asyncio
@@ -101,7 +108,7 @@ class TestGetSensors(_TestGetAuthentication):
         sensors: list[Sensor] = await create_sensors()
 
         response: httpx.Response = self.client.get(
-            self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert response.status_code == 200
 
@@ -120,7 +127,7 @@ class TestGetSensors(_TestGetAuthentication):
 
         await create_sensor_permission(token, sensors[0], read=True)
 
-        response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         assert len(response.json()) == 1
 
@@ -137,7 +144,7 @@ class TestGetSensors(_TestGetAuthentication):
 
         await create_sensor_permission(token, sensors[0])
 
-        response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         assert len(response.json()) == 0
 
@@ -145,7 +152,7 @@ class TestGetSensors(_TestGetAuthentication):
 class TestGetSensor(_TestGetAuthentication):
 
     @property
-    def _get_path(self) -> str:
+    async def _get_path(self) -> str:
         return "/sensor/0"
 
     @pytest.mark.asyncio
@@ -155,7 +162,7 @@ class TestGetSensor(_TestGetAuthentication):
         """
 
         await clear_sensors()
-        response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
 
         assert_HTTPException_EQ(response, NO_SENSOR_WITH_THIS_ID)
 
@@ -175,7 +182,7 @@ class TestGetSensor(_TestGetAuthentication):
 
 class TestCreateSensor(_TestPostAuthentication):
     @property
-    def _get_path(self) -> str:
+    async def _get_path(self) -> str:
         return "/sensor"
 
     @pytest.mark.asyncio
@@ -184,10 +191,10 @@ class TestCreateSensor(_TestPostAuthentication):
         Asserts the api is returning an error when the route is called with wrong authentication.
         """
         await clear_sensors()
-        data = {"name": "TestSensor1"}
+        data = {"name": "TestSensor1", "type": "environmental"}
 
         response: httpx.Response = self.client.post(
-            self._get_path, headers={"Authorization": f"Bearer {token}"}, json=data
+            await self._get_path, headers={"Authorization": f"Bearer {token}"}, json=data
         )
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
@@ -197,15 +204,16 @@ class TestCreateSensor(_TestPostAuthentication):
         Assert that creating a new sensor returns the sensor and that the sensor is created in the database.
         """
         await clear_sensors()
-        data = {"name": "TestSensor1"}
+        data = {"name": "TestSensor1", "type": "environmental"}
         response: httpx.Response = self.client.post(
-            self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=data
+            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=data
         )
 
         # Assert the request was successful.
         assert response.json().get("id") is not None
         assert response.status_code == 201
         assert response.json().get("name") == data["name"]
+        assert response.json().get("type") == data["type"]
 
         # Assert the sensor was added to the database.
         async with async_fake_session_maker() as session:
@@ -218,7 +226,7 @@ class TestCreateSensor(_TestPostAuthentication):
 class TestCreateSensorData(_TestPostAuthentication):
 
     @property
-    def _get_path(self) -> str:
+    async def _get_path(self) -> str:
         return "/sensor/0/data"
 
     @pytest.mark.asyncio
@@ -265,7 +273,59 @@ class TestCreateSensorData(_TestPostAuthentication):
         assert response.json() == sensor_data.model_dump(mode="json")
 
 
-class _TestGetSensorDataBase(_TestGetAuthentication):
+class _TestGetSensorBase(_TestGetAuthentication):
+    sensor: Sensor | None = None
+
+    @property
+    def _get_sensor_endpoint(self) -> str:
+        """
+        The sensor endpoint that should be used in the test.
+
+        Because of the check if a sensor exists we always need a valid sensor id.
+        Therefore, we dynamically build the path.
+        The first part is always the same, but the endpoint path should be what this function returns.
+        sensor/<sensor_id>/<endpoint>
+
+        This should be implemented by the child class.
+        """
+        return NotImplemented
+
+    @property
+    def _get_sensor_type(self) -> SensorTypeModel:
+        """
+        The type of sensor that should be used in the test.
+
+        This should be implemented by the child class.
+        """
+        raise NotImplemented
+
+    @property
+    async def _get_path(self) -> str:
+        return f"sensor/{(await self._get_sensor).id}/{self._get_sensor_endpoint}"
+
+    @property
+    async def _get_sensor(self) -> Sensor:
+        if self.sensor:
+            return self.sensor
+
+        self.sensor = await create_sensor(sensor_type=self._get_sensor_type)
+        return self.sensor
+
+    @pytest.mark.asyncio
+    async def test_get_sensor_data_wrong_type(self, token: str):
+        """
+        Asserts the request fails when the user does not have permissions to read the data.
+        """
+        sensor: Sensor = await create_sensor(
+            sensor_type=next(st for st in SensorTypeModel if st != self._get_sensor_type)
+        )
+        await create_sensor_permission(token, sensor, read=True)
+
+        response: httpx.Response = self.client.get(
+            f"sensor/{sensor.id}/{self._get_sensor_endpoint}", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert_HTTPException_EQ(response, INVALID_SENSOR_TYPE)
+
     @pytest.mark.asyncio
     async def test_get_sensor_data_no_permissions(self, token: str):
         """
@@ -275,16 +335,19 @@ class _TestGetSensorDataBase(_TestGetAuthentication):
             await session.execute(delete(SensorPermission))
             await session.commit()
 
-        response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
 
-class TestGetSensorData(_TestGetSensorDataBase):
+class TestGetSensorData(_TestGetSensorBase):
 
     @property
-    def _get_path(self) -> str:
+    def _get_sensor_endpoint(self) -> str:
+        return "data"
 
-        return "/sensor/0/data"
+    @property
+    def _get_sensor_type(self) -> SensorTypeModel:
+        return SensorTypeModel.ENVIRONMENTAL
 
     @pytest.mark.parametrize("user_token", [lf("token"), lf("superuser_token")])
     @pytest.mark.asyncio
@@ -316,11 +379,15 @@ class TestGetSensorData(_TestGetSensorDataBase):
         assert response.json() == [data.model_dump(mode="json") for data in sensor_data]
 
 
-class TestGetSensorDataDaily(_TestGetSensorDataBase):
+class TestGetSensorDataDaily(_TestGetSensorBase):
 
     @property
-    def _get_path(self) -> str:
-        return "/sensor/0/data/daily"
+    def _get_sensor_endpoint(self) -> str:
+        return "data/daily"
+
+    @property
+    def _get_sensor_type(self) -> SensorTypeModel:
+        return SensorTypeModel.ENVIRONMENTAL
 
     @pytest.mark.asyncio
     async def test_get_sensor_data_daily(self, token: str):

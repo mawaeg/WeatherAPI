@@ -14,7 +14,7 @@ from tests.utils.fixtures import superuser_token, token
 class TestGetUsers(_TestGetAuthentication):
 
     @property
-    def _get_path(self) -> str:
+    async def _get_path(self) -> str:
         return "/users"
 
     @pytest.mark.asyncio
@@ -22,7 +22,7 @@ class TestGetUsers(_TestGetAuthentication):
         """
         Asserts the api is returning an error when the route is called with a non superuser.
         """
-        response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.asyncio
@@ -40,7 +40,7 @@ class TestGetUsers(_TestGetAuthentication):
             users = result.scalars().all()
 
         response: httpx.Response = self.client.get(
-            self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert response.status_code == 200
         assert len(response.json()) == len(users)
@@ -49,7 +49,7 @@ class TestGetUsers(_TestGetAuthentication):
 class TestGetUsersMe(_TestGetAuthentication):
 
     @property
-    def _get_path(self) -> str:
+    async def _get_path(self) -> str:
         return "/users/me"
 
     @pytest.mark.asyncio
@@ -60,7 +60,7 @@ class TestGetUsersMe(_TestGetAuthentication):
         async with async_fake_session_maker() as session:
             current_user: DBUser = await get_current_user(token, session)
 
-        response: httpx.Response = self.client.get(self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         assert response.json()["username"] == current_user.username
         assert response.json()["superuser"] == current_user.superuser
@@ -69,7 +69,7 @@ class TestGetUsersMe(_TestGetAuthentication):
 class TestCreateUser(_TestPostAuthentication):
 
     @property
-    def _get_path(self):
+    async def _get_path(self):
         return "/users"
 
     @property
@@ -90,7 +90,7 @@ class TestCreateUser(_TestPostAuthentication):
         Asserts the api is returning an error when the route is called with a non superuser.
         """
         response: httpx.Response = self.client.post(
-            self._get_path, headers={"Authorization": f"Bearer {token}"}, json=self.test_user
+            await self._get_path, headers={"Authorization": f"Bearer {token}"}, json=self.test_user
         )
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
@@ -101,7 +101,7 @@ class TestCreateUser(_TestPostAuthentication):
         """
         await self.clear_test_user()
         response: httpx.Response = self.client.post(
-            self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=self.test_user
+            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=self.test_user
         )
 
         assert response.status_code == 201
@@ -121,11 +121,11 @@ class TestCreateUser(_TestPostAuthentication):
         await self.clear_test_user()
 
         response: httpx.Response = self.client.post(
-            self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=self.test_user
+            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=self.test_user
         )
         assert response.status_code == 201
 
         response: httpx.Response = self.client.post(
-            self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=self.test_user
+            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=self.test_user
         )
         assert_HTTPException_EQ(response, USER_ALREADY_EXISTS)
