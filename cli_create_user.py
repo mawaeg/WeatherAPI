@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from api.models.database_models import DBUser
-from api.utils.database import dispose_database, get_engine, get_session, initialize_database
+from api.utils.database import dispose_database, get_engine, get_session
 from api.utils.security import get_password_hash
 
 
@@ -13,7 +13,6 @@ async def create_user(username: str, password: str, superuser: bool):
     hashed_password: str = get_password_hash(password)
 
     engine: AsyncEngine = await get_engine()
-    await initialize_database()
     session: AsyncSession
     async for session in get_session(engine):
         try:

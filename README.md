@@ -22,11 +22,14 @@ A simple REST API built with FastAPI to manage sensor values of IOT devices and 
       - This includes test dependencies as well as black and isort.
 3. Copy the file `SECRETS.example.py` and name it `SECRETS.py`
 4. Set up a user and a database for the api and update the `PSQL_URL` string accordingly in the SECRETS file.
-5. For requesting forecast data the api also accesses the [Openweathermap One Call API 3.0](https://openweathermap.org/api/one-call-3).
+5. For the alembic migrations to work, the `example.alembic.ini` file need to be copied and named `alembic.ini`
+   - In this file `sqlalchemy.url` needs to be adapted accordingly
+6. For requesting forecast data the api also accesses the [Openweathermap One Call API 3.0](https://openweathermap.org/api/one-call-3).
     - Create a token and update the `OPENWEATHERMAP_KEY` string in the SECRETS file.
-6. For requesting stats about the server from my personal hoster (prepaid-hoster.de) I access data from their API.
+7. For requesting stats about the server from my personal hoster (prepaid-hoster.de) I access data from their API.
     - For that you also need to add a valid API token and update the `SERVERSTATS_SETTINGS` dict accordingly.
-7. To create the initial user in the database without manually writing to the database, there is a filed called `cli_create_user.py`.
+8. To create the database schema run `alembic upgrade head`
+9. To create the initial user in the database without manually writing to the database, there is a filed called `cli_create_user.py`.
    - With `python cli_create_user.py --username <username> --password <password> [--superuser]` you can create a new user with the given name and password.
 
 ### Running

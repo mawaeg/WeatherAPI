@@ -27,14 +27,6 @@ async def get_session(engine: Annotated[AsyncEngine, Depends(get_engine)]) -> As
         yield session
 
 
-async def initialize_database():  # pragma: no cover: Real database access cannot be properly tested
-    """
-    Initializes the database engine and creates all tables.
-    """
-    async with base_engine.begin() as connection:
-        await connection.run_sync(SQLModel.metadata.create_all)
-
-
 async def dispose_database():  # pragma: no cover: Real database access cannot be properly tested
     """
     Disposes the database engine.
