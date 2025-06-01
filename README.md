@@ -35,3 +35,8 @@ A simple REST API built with FastAPI to manage sensor values of IOT devices and 
 ### Running
 - To run the api use the following command: `uvicorn api.main:app --reload`
 - on `localhost:8000/docs` you will get detailed documentation over all endpoints.
+
+## Development notes
+- Code should always be formatted with `black .` and `isort .`
+- Tests can be run with coverage with the following command: `pytest tests --cov=api --cov-report=html`
+  - A html report will be generated under `htmlcov/index.html`
