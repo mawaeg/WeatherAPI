@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
 
-from api.main import app, dispose_db
+from api.main import app, lifespan
 
 client: TestClient = TestClient(app)
 
@@ -18,12 +18,13 @@ def test_root_route():
 
 
 @pytest.mark.asyncio
-async def test_shutdown_event(mocker: MockerFixture):
+async def test_lifespan(mocker: MockerFixture):
     """
     Asserts that the database gets disposed during the shutdown of the application.
     """
     initialize_db_mock = mocker.patch("api.main.dispose_database")
 
-    await dispose_db()
+    async with lifespan(app):
+        pass
 
     initialize_db_mock.assert_called_once()

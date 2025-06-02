@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, FastAPI
@@ -7,7 +8,13 @@ from api.routers import authentication, forecast, permissions, sensors, serverst
 from api.utils.database import dispose_database, get_session
 from api.utils.security import get_current_user
 
-app: FastAPI = FastAPI(root_path="/weatherapi")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    yield
+    await dispose_database()
+
+app: FastAPI = FastAPI(root_path="/weatherapi", lifespan=lifespan)
 
 app.include_router(authentication.auth_router)
 app.include_router(sensors.sensors_router)
@@ -15,11 +22,6 @@ app.include_router(users.users_router)
 app.include_router(forecast.forecast_router)
 app.include_router(permissions.permissions_router)
 app.include_router(serverstats.serverstats_router)
-
-
-@app.on_event("shutdown")
-async def dispose_db():
-    await dispose_database()
 
 
 @app.get("/")

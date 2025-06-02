@@ -42,7 +42,7 @@ async def get_sensors(
     if current_user.superuser:
         result = await session.execute(select(Sensor))
         sensors = result.scalars().all()
-        return [UserSensor(**sensor.dict(), user_id=current_user.id) for sensor in sensors]
+        return [UserSensor(**sensor.model_dump(), user_id=current_user.id) for sensor in sensors]
 
     result = await session.execute(
         select(Sensor, SensorPermission)
