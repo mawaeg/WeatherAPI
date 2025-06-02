@@ -33,7 +33,6 @@ class TestBase:
     def client(self) -> TestClient:
         return self._client
 
-    @property
     async def _get_path(self) -> str:
         """
         This returns the path that is currently tested.
@@ -56,7 +55,7 @@ class TestBase:
         """
         Asserts the api is returning and error when the route is called with no authentication.
         """
-        path = await self._get_path
+        path = await self._get_path()
         match self._get_method:
             case MethodType.GET:
                 response: httpx.Response = self.client.get(path)
@@ -79,7 +78,7 @@ class TestBase:
         # Invalidate token
         token += "_wrong"
 
-        path = await self._get_path
+        path = await self._get_path()
         match self._get_method:
             case MethodType.GET:
                 response: httpx.Response = self.client.get(path, headers={"Authorization": f"Bearer {token}"})

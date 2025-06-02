@@ -15,7 +15,6 @@ from tests.utils.serverstats_dump import (
 
 class TestGetServerStatsLive(_TestGetAuthentication):
 
-    @property
     async def _get_path(self) -> str:
         return "/server/stats/live"
 
@@ -25,7 +24,7 @@ class TestGetServerStatsLive(_TestGetAuthentication):
         Asserts the api is returning an error when the route is called with wrong authentication.
         """
 
-        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path(), headers={"Authorization": f"Bearer {token}"})
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.asyncio
@@ -36,7 +35,7 @@ class TestGetServerStatsLive(_TestGetAuthentication):
         httpx_mock.add_response(status_code=503)
 
         response: httpx.Response = self.client.get(
-            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path(), headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert_HTTPException_EQ(response, NO_SERVERSTATS_DATA)
 
@@ -48,7 +47,7 @@ class TestGetServerStatsLive(_TestGetAuthentication):
         httpx_mock.add_response(json=serverstats_live_dump)
 
         response: httpx.Response = self.client.get(
-            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path(), headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert response.status_code == 200
         assert len(response.json()) == len(serverstats_live_dump["data"])
@@ -56,7 +55,6 @@ class TestGetServerStatsLive(_TestGetAuthentication):
 
 class TestGetServerStatsHistory(_TestGetAuthentication):
 
-    @property
     async def _get_path(self) -> str:
         return "/server/stats/history"
 
@@ -66,7 +64,7 @@ class TestGetServerStatsHistory(_TestGetAuthentication):
         Asserts the api is returning an error when the route is called with wrong authentication.
         """
 
-        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path(), headers={"Authorization": f"Bearer {token}"})
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.asyncio
@@ -77,7 +75,7 @@ class TestGetServerStatsHistory(_TestGetAuthentication):
         httpx_mock.add_response(status_code=503)
 
         response: httpx.Response = self.client.get(
-            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path(), headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert_HTTPException_EQ(response, NO_SERVERSTATS_DATA)
 
@@ -90,7 +88,7 @@ class TestGetServerStatsHistory(_TestGetAuthentication):
 
         max_amount: int = len(serverstats_history_dump["data"]["chart"]["full_cpu_usage"]["labels"])
         response: httpx.Response = self.client.get(
-            await self._get_path, params={"entries": max_amount}, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path(), params={"entries": max_amount}, headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert response.status_code == 200
         assert response.json() == serverstats_history_expected_result
@@ -104,7 +102,7 @@ class TestGetServerStatsHistory(_TestGetAuthentication):
 
         max_amount: int = len(serverstats_history_dump["data"]["chart"]["full_cpu_usage"]["labels"]) + 1
         response: httpx.Response = self.client.get(
-            await self._get_path, params={"entries": max_amount}, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path(), params={"entries": max_amount}, headers={"Authorization": f"Bearer {superuser_token}"}
         )
 
         assert_HTTPException_EQ(response, NO_SERVERSTATS_DATA)

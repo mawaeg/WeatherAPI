@@ -61,7 +61,6 @@ async def create_user_write_permission(user_token: str) -> tuple[Sensor, DBUser,
 
 class TestPutSensorPermission(_TestPutAuthentication):
 
-    @property
     async def _get_path(self) -> str:
         return "/permissions/sensor"
 
@@ -72,7 +71,7 @@ class TestPutSensorPermission(_TestPutAuthentication):
         """
         sensor_permission = {"user_id": 1, "sensor_id": 1, "read": True, "write": False}
         response: httpx.Response = self.client.put(
-            await self._get_path, headers={"Authorization": f"Bearer {token}"}, json=sensor_permission
+            await self._get_path(), headers={"Authorization": f"Bearer {token}"}, json=sensor_permission
         )
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
@@ -108,7 +107,7 @@ class TestPutSensorPermission(_TestPutAuthentication):
 
         sensor_permission_json = {"user_id": user.id, "sensor_id": sensor.id, "read": True, "write": False}
         response: httpx.Response = self.client.put(
-            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=sensor_permission_json
+            await self._get_path(), headers={"Authorization": f"Bearer {superuser_token}"}, json=sensor_permission_json
         )
         await self.assert_created_correctly(response, sensor_permission_json)
 
@@ -116,14 +115,13 @@ class TestPutSensorPermission(_TestPutAuthentication):
         sensor_permission_json["read"] = False
         sensor_permission_json["write"] = True
         response: httpx.Response = self.client.put(
-            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=sensor_permission_json
+            await self._get_path(), headers={"Authorization": f"Bearer {superuser_token}"}, json=sensor_permission_json
         )
         await self.assert_created_correctly(response, sensor_permission_json)
 
 
 class TestGetSensorPermission(_TestGetAuthentication):
 
-    @property
     async def _get_path(self) -> str:
         return "/permissions/sensor"
 
@@ -133,7 +131,7 @@ class TestGetSensorPermission(_TestGetAuthentication):
         Assert an error is raised when a non superuser requests the endpoint.
         """
         response: httpx.Response = self.client.get(
-            f"{await self._get_path}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {token}"}
+            f"{await self._get_path()}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {token}"}
         )
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
@@ -146,7 +144,7 @@ class TestGetSensorPermission(_TestGetAuthentication):
             await session.execute(delete(SensorPermission))
             await session.commit()
         response: httpx.Response = self.client.get(
-            f"{await self._get_path}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {superuser_token}"}
+            f"{await self._get_path()}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert_HTTPException_EQ(response, PERMISSION_NOT_EXISTING)
 
@@ -158,7 +156,7 @@ class TestGetSensorPermission(_TestGetAuthentication):
         sensor, user, sensor_permission = await create_user_write_permission(superuser_token)
 
         response: httpx.Response = self.client.get(
-            f"{await self._get_path}?user_id={user.id}&sensor_id={sensor.id}",
+            f"{await self._get_path()}?user_id={user.id}&sensor_id={sensor.id}",
             headers={"Authorization": f"Bearer {superuser_token}"},
         )
         assert response.status_code == 200
@@ -167,7 +165,6 @@ class TestGetSensorPermission(_TestGetAuthentication):
 
 class TestDeleteSensorPermission(_TestDeleteAuthentication):
 
-    @property
     async def _get_path(self) -> str:
         return "/permissions/sensor"
 
@@ -177,7 +174,7 @@ class TestDeleteSensorPermission(_TestDeleteAuthentication):
         Assert an error is raised when a non superuser requests the endpoint.
         """
         response: httpx.Response = self.client.delete(
-            f"{await self._get_path}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {token}"}
+            f"{await self._get_path()}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {token}"}
         )
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
@@ -190,7 +187,7 @@ class TestDeleteSensorPermission(_TestDeleteAuthentication):
             await session.execute(delete(SensorPermission))
             await session.commit()
         response: httpx.Response = self.client.delete(
-            f"{await self._get_path}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {superuser_token}"}
+            f"{await self._get_path()}?user_id=1&sensor_id=1", headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert_HTTPException_EQ(response, PERMISSION_NOT_EXISTING)
 
@@ -202,7 +199,7 @@ class TestDeleteSensorPermission(_TestDeleteAuthentication):
         sensor, user, sensor_permission = await create_user_write_permission(superuser_token)
 
         response: httpx.Response = self.client.delete(
-            f"{await self._get_path}?user_id={user.id}&sensor_id={sensor.id}",
+            f"{await self._get_path()}?user_id={user.id}&sensor_id={sensor.id}",
             headers={"Authorization": f"Bearer {superuser_token}"},
         )
         assert response.status_code == 204

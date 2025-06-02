@@ -20,7 +20,6 @@ from tests.utils.sensor_utils import clear_sensors, create_sensor, create_sensor
 
 class TestGetSensors(_TestGetAuthentication):
 
-    @property
     async def _get_path(self) -> str:
         return "/sensor/list"
 
@@ -34,7 +33,7 @@ class TestGetSensors(_TestGetAuthentication):
         sensors: list[Sensor] = await create_sensors()
 
         response: httpx.Response = self.client.get(
-            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path(), headers={"Authorization": f"Bearer {superuser_token}"}
         )
         assert response.status_code == 200
 
@@ -53,7 +52,7 @@ class TestGetSensors(_TestGetAuthentication):
 
         await create_sensor_permission(token, sensors[0], read=True)
 
-        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path(), headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         assert len(response.json()) == 1
 
@@ -70,14 +69,13 @@ class TestGetSensors(_TestGetAuthentication):
 
         await create_sensor_permission(token, sensors[0])
 
-        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path(), headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         assert len(response.json()) == 0
 
 
 class TestGetSensor(_TestGetAuthentication):
 
-    @property
     async def _get_path(self) -> str:
         return "/sensor/0"
 
@@ -88,7 +86,7 @@ class TestGetSensor(_TestGetAuthentication):
         """
 
         await clear_sensors()
-        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path(), headers={"Authorization": f"Bearer {token}"})
 
         assert_HTTPException_EQ(response, NO_SENSOR_WITH_THIS_ID)
 
@@ -107,7 +105,7 @@ class TestGetSensor(_TestGetAuthentication):
 
 
 class TestCreateSensor(_TestPostAuthentication):
-    @property
+
     async def _get_path(self) -> str:
         return "/sensor"
 
@@ -120,7 +118,7 @@ class TestCreateSensor(_TestPostAuthentication):
         data = {"name": "TestSensor1", "type": "environmental"}
 
         response: httpx.Response = self.client.post(
-            await self._get_path, headers={"Authorization": f"Bearer {token}"}, json=data
+            await self._get_path(), headers={"Authorization": f"Bearer {token}"}, json=data
         )
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
@@ -132,7 +130,7 @@ class TestCreateSensor(_TestPostAuthentication):
         await clear_sensors()
         data = {"name": "TestSensor1", "type": "environmental"}
         response: httpx.Response = self.client.post(
-            await self._get_path, headers={"Authorization": f"Bearer {superuser_token}"}, json=data
+            await self._get_path(), headers={"Authorization": f"Bearer {superuser_token}"}, json=data
         )
 
         # Assert the request was successful.
@@ -150,6 +148,7 @@ class TestCreateSensor(_TestPostAuthentication):
 
 
 class TestCreateSensorData(_TestCreateSensorBase):
+
     @property
     def _get_sensor_type(self) -> SensorTypeModel:
         return SensorTypeModel.ENVIRONMENTAL
@@ -177,10 +176,9 @@ class TestGetSensorData(_TestGetSensorBase):
     def _get_sensor_type(self) -> SensorTypeModel:
         return SensorTypeModel.ENVIRONMENTAL
 
-    @property
     async def _get_data(self) -> list[DatabaseModelBase]:
         return [
-            SensorData(sensor_id=(await self._get_sensor).id, temperature=1.23, humidity=54.32, pressure=1234, voltage=3.21),
+            SensorData(sensor_id=(await self._get_sensor()).id, temperature=1.23, humidity=54.32, pressure=1234, voltage=3.21),
         ]
 
 
@@ -231,6 +229,7 @@ class TestGetSensorDataDaily(_TestGetSensorBase):
 
 
 class TestCreateSensorState(_TestCreateSensorBase):
+
     @property
     def _get_sensor_type(self) -> SensorTypeModel:
         return SensorTypeModel.STATE
@@ -258,6 +257,5 @@ class TestGetSensorState(_TestGetSensorBase):
     def _get_sensor_type(self) -> SensorTypeModel:
         return SensorTypeModel.STATE
 
-    @property
     async def _get_data(self):
-        return [SensorState(sensor_id=(await self._get_sensor).id, state=True, voltage=3.21)]
+        return [SensorState(sensor_id=(await self._get_sensor()).id, state=True, voltage=3.21)]

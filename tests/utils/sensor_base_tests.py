@@ -41,11 +41,9 @@ class _TestSensorMixin:
         """
         raise NotImplemented
 
-    @property
     async def _base_get_path(self) -> str:
-        return f"sensor/{(await self._get_sensor).id}/{self._get_sensor_endpoint}"
+        return f"sensor/{(await self._get_sensor()).id}/{self._get_sensor_endpoint}"
 
-    @property
     async def _get_sensor(self) -> Sensor:
         if self.sensor:
             return self.sensor
@@ -55,9 +53,8 @@ class _TestSensorMixin:
 
 
 class _TestCreateSensorBase(_TestPostAuthentication, _TestSensorMixin):
-    @property
     async def _get_path(self) -> str:
-        return await self._base_get_path
+        return await self._base_get_path()
 
     @property
     def _get_data(self) -> dict[str, Any]:
@@ -87,7 +84,7 @@ class _TestCreateSensorBase(_TestPostAuthentication, _TestSensorMixin):
             await session.commit()
 
         response: httpx.Response = self.client.post(
-            await self._get_path, headers={"Authorization": f"Bearer {token}"}, json=self._get_data
+            await self._get_path(), headers={"Authorization": f"Bearer {token}"}, json=self._get_data
         )
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
@@ -96,10 +93,10 @@ class _TestCreateSensorBase(_TestPostAuthentication, _TestSensorMixin):
         """
         Assert that creating a new sensor data returns the sensor data and that the sensor data is created in the database.
         """
-        await create_sensor_permission(token, await self._get_sensor, write=True)
+        await create_sensor_permission(token, await self._get_sensor(), write=True)
 
         response: httpx.Response = self.client.post(
-            await self._get_path, headers={"Authorization": f"Bearer {token}"}, json=self._get_data
+            await self._get_path(), headers={"Authorization": f"Bearer {token}"}, json=self._get_data
         )
 
         # Assert the request was successful.
@@ -119,9 +116,8 @@ class _TestCreateSensorBase(_TestPostAuthentication, _TestSensorMixin):
 class _TestGetSensorBase(_TestGetAuthentication, _TestSensorMixin):
     # ToDo Add test to check error when sensor is not existing
 
-    @property
     async def _get_path(self) -> str:
-        return await self._base_get_path
+        return await self._base_get_path()
 
     @property
     def _run_get(self) -> bool:
@@ -130,7 +126,6 @@ class _TestGetSensorBase(_TestGetAuthentication, _TestSensorMixin):
         """
         return True
 
-    @property
     async def _get_data(self) -> list[DatabaseModelBase]:
         """
         The data that should be inserted into the database.
@@ -163,7 +158,7 @@ class _TestGetSensorBase(_TestGetAuthentication, _TestSensorMixin):
             await session.execute(delete(SensorPermission))
             await session.commit()
 
-        response: httpx.Response = self.client.get(await self._get_path, headers={"Authorization": f"Bearer {token}"})
+        response: httpx.Response = self.client.get(await self._get_path(), headers={"Authorization": f"Bearer {token}"})
         assert_HTTPException_EQ(response, MISSING_PRIVILEGES)
 
     @pytest.mark.parametrize("user_token", [lf("token"), lf("superuser_token")])
@@ -175,13 +170,13 @@ class _TestGetSensorBase(_TestGetAuthentication, _TestSensorMixin):
         if not self._run_get:
             pytest.skip("Test should not be executed.")
 
-        await create_sensor_permission(user_token, await self._get_sensor, read=True)
+        await create_sensor_permission(user_token, await self._get_sensor(), read=True)
 
         # ToDo Inserting and comparing multiple sometimes fails because of wrong order.
         # Is there and easy way to test it with multiple data?
 
         # Insert fake sensor data
-        fake_data = await self._get_data
+        fake_data = await self._get_data()
 
         async with async_fake_session_maker() as session:
             for data in fake_data:
@@ -190,7 +185,7 @@ class _TestGetSensorBase(_TestGetAuthentication, _TestSensorMixin):
                 await session.refresh(data)
 
         response: httpx.Response = self.client.get(
-            await self._get_path, headers={"Authorization": f"Bearer {user_token}"}
+            await self._get_path(), headers={"Authorization": f"Bearer {user_token}"}
         )
         assert response.status_code == 200
         print([data.model_dump(mode="json") for data in fake_data])
