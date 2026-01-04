@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql import func
 from sqlmodel import NUMERIC, cast, or_, select
@@ -22,6 +22,7 @@ from api.utils.database import get_session
 from api.utils.permissions import get_user_read_permissions, get_user_write_permissions
 from api.utils.security import get_current_superuser, get_current_user
 from api.utils.sensor_utils import get_is_valid_sensor_type, get_sensor_from_db
+from api.utils.websocket_connection_handler import WebsocketHandler, get_websocket_handler
 
 sensors_router = APIRouter(tags=["Sensors"], prefix="/sensor")
 
@@ -117,6 +118,8 @@ async def create_sensor(
 @sensors_router.post("/{sensor_id}/data", response_model=SensorData, status_code=status.HTTP_201_CREATED)
 async def create_sensor_data(
     session: Annotated[AsyncSession, Depends(get_session)],
+    ws_handler: Annotated[WebsocketHandler, Depends(get_websocket_handler)],
+    background_tasks: BackgroundTasks,
     current_user: Annotated[DBUser, Depends(get_current_user)],
     sensor_id: int,
     data: SensorDataCreate,
@@ -140,6 +143,9 @@ async def create_sensor_data(
     session.add(data)
     await session.commit()
     await session.refresh(data)
+
+    background_tasks.add_task(ws_handler.add_event, data)
+
     return data
 
 
@@ -210,6 +216,8 @@ async def get_sensor_data_daily(
 @sensors_router.post("/{sensor_id}/state", response_model=SensorState, status_code=status.HTTP_201_CREATED)
 async def create_sensor_state(
     session: Annotated[AsyncSession, Depends(get_session)],
+    ws_handler: Annotated[WebsocketHandler, Depends(get_websocket_handler)],
+    background_tasks: BackgroundTasks,
     current_user: Annotated[DBUser, Depends(get_current_user)],
     sensor_id: int,
     data: SensorStateCreate,
@@ -233,6 +241,9 @@ async def create_sensor_state(
     session.add(data)
     await session.commit()
     await session.refresh(data)
+
+    background_tasks.add_task(ws_handler.add_event, data)
+
     return data
 
 

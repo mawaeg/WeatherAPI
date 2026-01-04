@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Header, WebSocketException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -92,6 +92,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], session: Annotated[AsyncSession, Depends(get_session)]
 ) -> DBUser:
+    # ToDo Handle expired token somehow
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         username: str = payload.get("sub")
@@ -102,6 +103,29 @@ async def get_current_user(
     user = await get_user(username, session)
     if user is None:
         raise INVALID_CREDENTIALS
+    return user
+
+
+async def get_current_user_ws(
+    session: Annotated[AsyncSession, Depends(get_session)], authorization: Annotated[str | None, Header()] = None
+) -> DBUser:
+    if authorization is None:
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+
+    if not authorization.startswith("Bearer "):
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        username: str = payload.get("sub")
+        if username is None:
+            raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+    except JWTError:
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+    user = await get_user(username, session)
+    if user is None:
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
     return user
 
 
