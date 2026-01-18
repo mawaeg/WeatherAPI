@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, WebSocketException, status
 
 from api.models.database_models import DBUser
 from api.utils.security import get_current_user_ws
@@ -15,8 +15,12 @@ async def websocket_endpoint(
     current_user: Annotated[DBUser, Depends(get_current_user_ws)],
     ws_handler: Annotated[WebsocketHandler, Depends(get_websocket_handler)],
 ):
+    if not ws_handler.add(current_user, websocket):
+        return await websocket.close(1008)
+
     await websocket.accept()
-    ws_handler.add(current_user, websocket)
+    await websocket.send_json({"message": "Hello World!"})
+
     print(f"Accepted connection with {current_user.username}")
     try:
         while True:
