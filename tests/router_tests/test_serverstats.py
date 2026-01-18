@@ -88,7 +88,9 @@ class TestGetServerStatsHistory(_TestGetAuthentication):
 
         max_amount: int = len(serverstats_history_dump["data"]["chart"]["full_cpu_usage"]["labels"])
         response: httpx.Response = self.client.get(
-            await self._get_path(), params={"entries": max_amount}, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path(),
+            params={"entries": max_amount},
+            headers={"Authorization": f"Bearer {superuser_token}"},
         )
         assert response.status_code == 200
         assert response.json() == serverstats_history_expected_result
@@ -102,7 +104,9 @@ class TestGetServerStatsHistory(_TestGetAuthentication):
 
         max_amount: int = len(serverstats_history_dump["data"]["chart"]["full_cpu_usage"]["labels"]) + 1
         response: httpx.Response = self.client.get(
-            await self._get_path(), params={"entries": max_amount}, headers={"Authorization": f"Bearer {superuser_token}"}
+            await self._get_path(),
+            params={"entries": max_amount},
+            headers={"Authorization": f"Bearer {superuser_token}"},
         )
 
         assert_HTTPException_EQ(response, NO_SERVERSTATS_DATA)

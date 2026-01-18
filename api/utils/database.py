@@ -1,10 +1,10 @@
+from types import AsyncGeneratorType
 from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlmodel import SQLModel
 
 from SECRETS import PSQL_URL
 
@@ -15,7 +15,7 @@ async def get_engine() -> AsyncEngine:
     return base_engine  # pragma: no cover: Real database access cannot be properly tested
 
 
-async def get_session(engine: Annotated[AsyncEngine, Depends(get_engine)]) -> AsyncSession:
+async def get_session(engine: Annotated[AsyncEngine, Depends(get_engine)]) -> AsyncGeneratorType:
     """
     Creates an Async database session from the engine
 

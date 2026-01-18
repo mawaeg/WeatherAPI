@@ -152,7 +152,7 @@ async def create_sensor_data(
 @sensors_router.get("/{sensor_id}/data", response_model=list[SensorData])
 async def get_sensor_data(
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[DBUser, Depends(get_current_user)],
     sensor_id: int,
     amount: int = 1,
 ):
@@ -181,7 +181,7 @@ async def get_sensor_data(
 @sensors_router.get("/{sensor_id}/data/daily", response_model=list[DailySensorData])
 async def get_sensor_data_daily(
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[DBUser, Depends(get_current_user)],
     sensor_id: int,
     amount: int = 1,
 ):
@@ -250,7 +250,7 @@ async def create_sensor_state(
 @sensors_router.get("/{sensor_id}/state", response_model=list[SensorState])
 async def get_sensor_state(
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[DBUser, Depends(get_current_user)],
     sensor_id: int,
     amount: int = 1,
 ):

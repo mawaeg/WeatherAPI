@@ -178,7 +178,9 @@ class TestGetSensorData(_TestGetSensorBase):
 
     async def _get_data(self) -> list[DatabaseModelBase]:
         return [
-            SensorData(sensor_id=(await self._get_sensor()).id, temperature=1.23, humidity=54.32, pressure=1234, voltage=3.21),
+            SensorData(
+                sensor_id=(await self._get_sensor()).id, temperature=1.23, humidity=54.32, pressure=1234, voltage=3.21
+            ),
         ]
 
 

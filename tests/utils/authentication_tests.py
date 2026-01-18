@@ -39,7 +39,7 @@ class TestBase:
 
         This should be implemented by the class that implements the tests for the path
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @property
     def _get_method(self) -> MethodType:
@@ -48,7 +48,7 @@ class TestBase:
 
         This should be implemented by the child class.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @pytest.mark.asyncio
     async def test_no_authentication(self):
@@ -66,7 +66,7 @@ class TestBase:
             case MethodType.DELETE:
                 response: httpx.Response = self.client.delete(path)
             case _:
-                raise NotImplemented
+                raise NotImplementedError
 
         assert_HTTPException_EQ(response, NOT_AUTHENTICATED_EXCEPTION)
 
@@ -89,7 +89,7 @@ class TestBase:
             case MethodType.DELETE:
                 response: httpx.Response = self.client.delete(path, headers={"Authorization": f"Bearer {token}"})
             case _:
-                raise NotImplemented
+                raise NotImplementedError
 
         assert_HTTPException_EQ(response, INVALID_CREDENTIALS)
 
